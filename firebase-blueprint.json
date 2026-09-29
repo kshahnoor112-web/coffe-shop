@@ -1,0 +1,404 @@
+{
+  "entities": {
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "Specialty coffee drink, artisanal pastry, or single-origin whole bean item in the roastery catalog.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the menu item",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the beverage or bakehouse item",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "Short sensory or preparation subtitle",
+          "minLength": 2,
+          "maxLength": 200
+        },
+        "category": {
+          "type": "string",
+          "enum": ["espresso", "cold_brew", "bakehouse", "whole_beans"],
+          "description": "Menu category classification"
+        },
+        "price": {
+          "type": "number",
+          "description": "Price in INR"
+        },
+        "imageUrl": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "origin": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "elevation": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "process": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "roastLevel": {
+          "type": "string",
+          "enum": ["Light-Medium", "Medium", "Medium-Dark", "Artisanal Bake"]
+        },
+        "tastingNotes": {
+          "type": "array",
+          "description": "Up to 6 sensory flavor notes"
+        },
+        "caffeineMg": {
+          "type": "number"
+        },
+        "calories": {
+          "type": "number"
+        },
+        "volumeOrWeight": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "description": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 600
+        },
+        "inStock": {
+          "type": "boolean"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "subtitle",
+        "category",
+        "price",
+        "imageUrl",
+        "origin",
+        "elevation",
+        "process",
+        "roastLevel",
+        "tastingNotes",
+        "caffeineMg",
+        "calories",
+        "volumeOrWeight",
+        "description",
+        "inStock"
+      ]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer coffee and bakehouse order placed for Dine-In, Express Pickup, or Courier Delivery.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the customer who placed the order",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "orderNumber": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 24
+        },
+        "customerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "diningMode": {
+          "type": "string",
+          "enum": ["Dine-In at Table", "Express Bar Pickup", "Roastery Courier Delivery"]
+        },
+        "tableOrAddress": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["UPI / Instant Pay", "Pay at Espresso Bar", "Cash on Delivery"]
+        },
+        "itemSummary": {
+          "type": "array",
+          "description": "Bounded list (max 10) of human-readable line item strings"
+        },
+        "subtotal": {
+          "type": "number"
+        },
+        "discount": {
+          "type": "number"
+        },
+        "tax": {
+          "type": "number"
+        },
+        "deliveryFee": {
+          "type": "number"
+        },
+        "total": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Received",
+            "Grinding & Extracting",
+            "Steaming & Plating",
+            "Ready for Pickup / Table",
+            "Completed"
+          ]
+        },
+        "estimatedReadyMinutes": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "orderNumber",
+        "customerName",
+        "diningMode",
+        "tableOrAddress",
+        "paymentMethod",
+        "itemSummary",
+        "subtotal",
+        "discount",
+        "tax",
+        "deliveryFee",
+        "total",
+        "status",
+        "estimatedReadyMinutes",
+        "createdAt"
+      ]
+    },
+    "Reservation": {
+      "title": "Reservation",
+      "description": "Table or private cupping room reservation at the Bandra West flagship roastery.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "confirmationCode": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 24
+        },
+        "guestName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "date": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "timeSlot": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 80
+        },
+        "guests": {
+          "type": "number"
+        },
+        "seatingZone": {
+          "type": "string",
+          "enum": [
+            "Espresso Bar Counter",
+            "Sunlit Courtyard",
+            "Roasters Mezzanine",
+            "Private Cupping Room"
+          ]
+        },
+        "occasion": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "specialRequests": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Confirmed", "Seated", "Cancelled"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "confirmationCode",
+        "guestName",
+        "date",
+        "timeSlot",
+        "guests",
+        "seatingZone",
+        "occasion",
+        "specialRequests",
+        "status",
+        "createdAt"
+      ]
+    },
+    "GuestReview": {
+      "title": "GuestReview",
+      "description": "Public guest or Q-Grader tasting note for the roastery ledger.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "guestName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "roleOrContext": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "orderedItem": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "rating": {
+          "type": "number"
+        },
+        "comment": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "authorId",
+        "guestName",
+        "roleOrContext",
+        "orderedItem",
+        "rating",
+        "comment",
+        "createdAt"
+      ]
+    },
+    "PrivateContact": {
+      "title": "PrivateContact",
+      "description": "Isolated PII contact record for an order or reservation (phone/email).",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 40
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "phone", "email", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/menu/{menuId}": {
+      "schema": { "$ref": "#/entities/MenuItem" },
+      "description": "Publicly readable specialty coffee and bakehouse catalog managed by roastery admins."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Customer coffee orders tracked in the live barista queue."
+    },
+    "/orders/{orderId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/PrivateContact" },
+      "description": "Isolated PII contact details for an order."
+    },
+    "/reservations/{reservationId}": {
+      "schema": { "$ref": "#/entities/Reservation" },
+      "description": "Table and private cupping room bookings."
+    },
+    "/reservations/{reservationId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/PrivateContact" },
+      "description": "Isolated PII contact details for a table reservation."
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/GuestReview" },
+      "description": "Verified guest and Q-Grader tasting notes."
+    }
+  }
+}

@@ -1,0 +1,297 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net: Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'kshahnoor112@gmail.com'
+      );
+    }
+
+    // 3. Entity Validation Blueprints (Anti-Update-Gap)
+    function isValidMenuItem(data) {
+      return data.keys().hasAll([
+          'id', 'name', 'subtitle', 'category', 'price', 'imageUrl',
+          'origin', 'elevation', 'process', 'roastLevel', 'tastingNotes',
+          'caffeineMg', 'calories', 'volumeOrWeight', 'description', 'inStock'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'name', 'subtitle', 'category', 'price', 'imageUrl',
+          'origin', 'elevation', 'process', 'roastLevel', 'tastingNotes',
+          'caffeineMg', 'calories', 'volumeOrWeight', 'description', 'inStock',
+          'featured', 'seasonalTag', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+        data.subtitle is string && data.subtitle.size() >= 2 && data.subtitle.size() <= 200 &&
+        data.category is string && data.category.size() <= 32 &&
+        (data.category == 'espresso' || data.category == 'cold_brew' || data.category == 'bakehouse' || data.category == 'whole_beans') &&
+        data.price is number && data.price >= 0 && data.price <= 50000 &&
+        data.imageUrl is string && data.imageUrl.size() >= 1 && data.imageUrl.size() <= 500 &&
+        data.origin is string && data.origin.size() >= 2 && data.origin.size() <= 120 &&
+        data.elevation is string && data.elevation.size() >= 2 && data.elevation.size() <= 80 &&
+        data.process is string && data.process.size() >= 2 && data.process.size() <= 100 &&
+        data.roastLevel is string && data.roastLevel.size() <= 40 &&
+        (data.roastLevel == 'Light-Medium' || data.roastLevel == 'Medium' || data.roastLevel == 'Medium-Dark' || data.roastLevel == 'Artisanal Bake') &&
+        data.tastingNotes is list && data.tastingNotes.size() >= 1 && data.tastingNotes.size() <= 6 && data.tastingNotes[0] is string && data.tastingNotes[0].size() <= 60 &&
+        data.caffeineMg is number && data.caffeineMg >= 0 && data.caffeineMg <= 1000 &&
+        data.calories is number && data.calories >= 0 && data.calories <= 5000 &&
+        data.volumeOrWeight is string && data.volumeOrWeight.size() >= 1 && data.volumeOrWeight.size() <= 50 &&
+        data.description is string && data.description.size() >= 5 && data.description.size() <= 600 &&
+        data.inStock is bool;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'orderNumber', 'customerName', 'diningMode',
+          'tableOrAddress', 'paymentMethod', 'itemSummary', 'subtotal',
+          'discount', 'tax', 'deliveryFee', 'total', 'status',
+          'estimatedReadyMinutes', 'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'ownerId', 'orderNumber', 'customerName', 'diningMode',
+          'tableOrAddress', 'paymentMethod', 'itemSummary', 'subtotal',
+          'discount', 'tax', 'deliveryFee', 'total', 'status',
+          'estimatedReadyMinutes', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.ownerId) &&
+        data.orderNumber is string && data.orderNumber.size() >= 3 && data.orderNumber.size() <= 24 &&
+        data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 100 &&
+        data.diningMode is string && data.diningMode.size() <= 40 &&
+        (data.diningMode == 'Dine-In at Table' || data.diningMode == 'Express Bar Pickup' || data.diningMode == 'Roastery Courier Delivery') &&
+        data.tableOrAddress is string && data.tableOrAddress.size() >= 1 && data.tableOrAddress.size() <= 240 &&
+        data.paymentMethod is string && data.paymentMethod.size() <= 40 &&
+        (data.paymentMethod == 'UPI / Instant Pay' || data.paymentMethod == 'Pay at Espresso Bar' || data.paymentMethod == 'Cash on Delivery') &&
+        data.itemSummary is list && data.itemSummary.size() >= 1 && data.itemSummary.size() <= 10 && data.itemSummary[0] is string && data.itemSummary[0].size() <= 240 &&
+        data.subtotal is number && data.subtotal >= 0 && data.subtotal <= 500000 &&
+        data.discount is number && data.discount >= 0 && data.discount <= 500000 &&
+        data.tax is number && data.tax >= 0 && data.tax <= 100000 &&
+        data.deliveryFee is number && data.deliveryFee >= 0 && data.deliveryFee <= 5000 &&
+        data.total is number && data.total >= 0 && data.total <= 600000 &&
+        data.status is string && data.status.size() <= 40 &&
+        (
+          data.status == 'Received' ||
+          data.status == 'Grinding & Extracting' ||
+          data.status == 'Steaming & Plating' ||
+          data.status == 'Ready for Pickup / Table' ||
+          data.status == 'Completed'
+        ) &&
+        data.estimatedReadyMinutes is number && data.estimatedReadyMinutes >= 0 && data.estimatedReadyMinutes <= 180 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidReservation(data) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'confirmationCode', 'guestName', 'date',
+          'timeSlot', 'guests', 'seatingZone', 'occasion',
+          'specialRequests', 'status', 'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'ownerId', 'confirmationCode', 'guestName', 'date',
+          'timeSlot', 'guests', 'seatingZone', 'occasion',
+          'specialRequests', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.ownerId) &&
+        data.confirmationCode is string && data.confirmationCode.size() >= 3 && data.confirmationCode.size() <= 24 &&
+        data.guestName is string && data.guestName.size() >= 1 && data.guestName.size() <= 100 &&
+        data.date is string && data.date.size() >= 8 && data.date.size() <= 20 &&
+        data.timeSlot is string && data.timeSlot.size() >= 3 && data.timeSlot.size() <= 80 &&
+        data.guests is number && data.guests >= 1 && data.guests <= 20 &&
+        data.seatingZone is string && data.seatingZone.size() >= 3 && data.seatingZone.size() <= 50 &&
+        (
+          data.seatingZone == 'Espresso Bar Counter' ||
+          data.seatingZone == 'Sunlit Courtyard' ||
+          data.seatingZone == 'Roasters Mezzanine' ||
+          data.seatingZone == 'Private Cupping Room'
+        ) &&
+        data.occasion is string && data.occasion.size() >= 2 && data.occasion.size() <= 120 &&
+        data.specialRequests is string && data.specialRequests.size() <= 300 &&
+        data.status is string && data.status.size() <= 24 &&
+        (data.status == 'Confirmed' || data.status == 'Seated' || data.status == 'Cancelled') &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidGuestReview(data) {
+      return data.keys().hasAll([
+          'id', 'authorId', 'guestName', 'roleOrContext',
+          'orderedItem', 'rating', 'comment', 'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'authorId', 'guestName', 'roleOrContext',
+          'orderedItem', 'rating', 'comment', 'createdAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.authorId) &&
+        data.guestName is string && data.guestName.size() >= 1 && data.guestName.size() <= 80 &&
+        data.roleOrContext is string && data.roleOrContext.size() >= 1 && data.roleOrContext.size() <= 120 &&
+        data.orderedItem is string && data.orderedItem.size() >= 1 && data.orderedItem.size() <= 120 &&
+        data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+        data.comment is string && data.comment.size() >= 5 && data.comment.size() <= 500 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidPrivateContact(data) {
+      return data.keys().hasAll(['ownerId', 'phone', 'email', 'createdAt']) &&
+        data.keys().hasOnly(['ownerId', 'phone', 'email', 'createdAt']) &&
+        isValidId(data.ownerId) &&
+        data.phone is string && data.phone.size() >= 3 && data.phone.size() <= 40 &&
+        data.email is string && data.email.size() <= 120 &&
+        data.createdAt is timestamp;
+    }
+
+    // 4. Admins Collection (Read-only lookup for RBAC)
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId) && request.auth.uid == adminId;
+      allow list, create, update, delete: if false;
+    }
+
+    // 5. Menu Catalog Collection (/menu/{menuId})
+    match /menu/{menuId} {
+      allow get: if isValidId(menuId) && resource != null;
+      allow list: if resource.data.inStock == true || resource.data.inStock == false;
+      allow create: if isAdmin() && isValidId(menuId) && incoming().id == menuId && isValidMenuItem(incoming());
+      allow update: if isAdmin() && isValidId(menuId) && isValidMenuItem(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['inStock', 'price', 'updatedAt']) &&
+        incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(menuId);
+    }
+
+    // 6. Orders Collection (/orders/{orderId})
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && isValidId(orderId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(orderId) &&
+        isValidOrder(incoming()) &&
+        incoming().id == orderId &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().status == 'Received' &&
+        incoming().createdAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(orderId) &&
+        isValidOrder(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (
+            existing().ownerId == request.auth.uid &&
+            existing().status != 'Completed' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['tableOrAddress', 'updatedAt'])
+          )
+        );
+      allow delete: if isAdmin() && isValidId(orderId);
+
+      // Isolated PII Subcollection (/orders/{orderId}/private/{docId})
+      match /private/{docId} {
+        allow get: if isSignedIn() && isValidId(orderId) && isValidId(docId) && (
+          get(/databases/$(database)/documents/orders/$(orderId)).data.ownerId == request.auth.uid ||
+          isAdmin()
+        );
+        allow list: if false;
+        allow create: if isVerifiedUser() &&
+          isValidId(orderId) &&
+          isValidId(docId) &&
+          isValidPrivateContact(incoming()) &&
+          incoming().ownerId == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/orders/$(orderId)) &&
+          get(/databases/$(database)/documents/orders/$(orderId)).data.ownerId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // 7. Table Reservations Collection (/reservations/{reservationId})
+    match /reservations/{reservationId} {
+      allow get: if isSignedIn() && isValidId(reservationId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(reservationId) &&
+        isValidReservation(incoming()) &&
+        incoming().id == reservationId &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().status == 'Confirmed' &&
+        incoming().createdAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(reservationId) &&
+        isValidReservation(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (
+            existing().ownerId == request.auth.uid &&
+            existing().status != 'Cancelled' &&
+            incoming().status == 'Cancelled' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          )
+        );
+      allow delete: if isAdmin() && isValidId(reservationId);
+
+      // Isolated PII Subcollection (/reservations/{reservationId}/private/{docId})
+      match /private/{docId} {
+        allow get: if isSignedIn() && isValidId(reservationId) && isValidId(docId) && (
+          get(/databases/$(database)/documents/reservations/$(reservationId)).data.ownerId == request.auth.uid ||
+          isAdmin()
+        );
+        allow list: if false;
+        allow create: if isVerifiedUser() &&
+          isValidId(reservationId) &&
+          isValidId(docId) &&
+          isValidPrivateContact(incoming()) &&
+          incoming().ownerId == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/reservations/$(reservationId)) &&
+          get(/databases/$(database)/documents/reservations/$(reservationId)).data.ownerId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // 8. Verified Guest Reviews & Tasting Notes (/reviews/{reviewId})
+    match /reviews/{reviewId} {
+      allow get: if isValidId(reviewId) && resource != null;
+      allow list: if resource.data.rating >= 1 && resource.data.rating <= 5;
+      allow create: if isVerifiedUser() &&
+        isValidId(reviewId) &&
+        isValidGuestReview(incoming()) &&
+        incoming().id == reviewId &&
+        incoming().authorId == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isSignedIn() && isValidId(reviewId) && (existing().authorId == request.auth.uid || isAdmin());
+    }
+  }
+}

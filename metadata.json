@@ -1,0 +1,6 @@
+{
+  "name": "KĀFĪ Roastery & Bakehouse",
+  "description": "Specialty single-origin coffee roastery, bespoke espresso atelier, artisanal bakehouse, and live table reservation & ordering platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
